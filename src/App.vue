@@ -19,7 +19,21 @@
         height: 600px;
         width: 600px;
       "
-    ></div>
+    >
+      <template v-for="(dice, index) in dices" :key="index">
+        <canvas
+          :id="'dice-' + index"
+          width="100"
+          height="100"
+          :style="{
+            left: dice.x * 100 + 'px',
+            top: dice.y * 100 + 'px',
+            position: 'absolute',
+            backgroundColor: 'brown',
+          }"
+        ></canvas>
+      </template>
+    </div>
     <vue-draggable-resizable
       :grid="[100, 100]"
       @dragStop="onDragstop"
@@ -87,6 +101,23 @@ export default {
     onDragstop: (event) => {
       console.log('onDragstop', event)
     },
+    generateDices() {
+      const positions = new Set()
+      while (positions.size < 6) {
+        const x = Math.floor(Math.random() * 6)
+        const y = Math.floor(Math.random() * 6)
+        positions.add(`${x},${y}`)
+        this.dices.push({ x, y })
+      }
+    },
+  },
+  created() {
+    this.generateDices()
+  },
+  data() {
+    return {
+      dices: [],
+    }
   },
 }
 </script>
