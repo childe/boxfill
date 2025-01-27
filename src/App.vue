@@ -1,13 +1,74 @@
 <template>
-  <div id="gamebox" style="height: 800px; width: 800px; border: solid black 1px"></div>
+  <div
+    id="gamebox"
+    style="height: {{constraints.y.max}}px; width: {{constraints.x.max}}px; border: solid black 1px"
+  ></div>
 </template>
 
 <script>
 import { SVG } from '@svgdotjs/svg.js'
 import '@svgdotjs/svg.draggable.js'
 
+const width = 100
+const height = 100
+
 export default {
   methods: {
+    drawPiece(draw, piece) {
+      console.log(piece)
+
+      const color = piece['color']
+
+      const group = draw.group()
+      for (let i = 0; i < piece['rects'].length; i++) {
+        const rect = piece['rects'][i]
+        let e = draw
+          .rect(100, 100)
+          .move(rect['x'] * 100, rect['y'] * 100)
+          .fill(color)
+        group.add(e)
+      }
+
+      const originX = 600
+      const originY = 0
+      group.move(originX, originY)
+
+      // 使组可拖拽
+      group.draggable()
+      group.on('dragmove.namespace', (e) => {
+        const { handler, box } = e.detail
+        e.preventDefault()
+
+        let { x, y } = box
+
+        if (x <= this.constraints.x.min) {
+          x = this.constraints.x.min
+        }
+
+        if (y <= this.constraints.y.min) {
+          y = this.constraints.y.min
+        }
+
+        if (box.x2 >= this.constraints.x.max) {
+          x = this.constraints.x.max - box.w
+        }
+
+        if (box.y2 > this.constraints.y.max) {
+          y = this.constraints.y.max - box.h
+        }
+
+        handler.move(x - (x % 50), y - (y % 50))
+      })
+      group.on('dragend.namespace', function (e) {
+        const { box } = e.detail
+        e.preventDefault()
+
+        let { x, y } = box
+
+        console.log(parseInt(x / width), parseInt(y / height))
+        group.move(originX, originY)
+      })
+    },
     drawDice(draw, x, y, number) {
       const diceSize = 100 * 0.8
       const diceX = 100 * 0.1 + x * 100
@@ -27,13 +88,27 @@ export default {
         })
         .move(diceX + diceSize / 2 - fontSize / 2, diceY + diceSize / 2 - fontSize / 2)
     },
+    generateDices() {
+      const coordinates = []
+      const used = new Set()
+
+      while (coordinates.length < 6) {
+        const x = Math.floor(Math.random() * 6)
+        const y = Math.floor(Math.random() * 6)
+        const key = `${x},${y}`
+
+        if (!used.has(key)) {
+          coordinates.push({ x, y })
+          used.add(key)
+        }
+      }
+
+      return coordinates
+    },
   },
   mounted() {
-    const constraints = {
-      x: { min: 0, max: 800 },
-      y: { min: 0, max: 800 },
-    }
-    var draw = SVG().addTo('#gamebox').size(constraints.x.max, constraints.y.max)
+    var draw = SVG().addTo('#gamebox').size(this.constraints.x.max, this.constraints.y.max)
+
     // 画棋盘
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 6; j++) {
@@ -44,40 +119,37 @@ export default {
           .fill(color)
       }
     }
-    // 画红色色子
-    this.drawDice(draw, 2, 3, 'c4')
 
-    var rect = draw.rect(100, 100).move(700, 0).attr({ fill: '#bbb' })
-    rect.draggable()
+    for (let i = 0; i < this.pieces.length; i++) {
+      this.drawPiece(draw, this.pieces[i])
+    }
 
-    rect.on('dragmove.namespace', (e) => {
-      const { handler, box } = e.detail
-      e.preventDefault()
-
-      let { x, y } = box
-
-      if (x <= constraints.x.min) {
-        x = constraints.x.min
-      }
-
-      if (y <= constraints.y.min) {
-        y = constraints.y.min
-      }
-
-      if (box.x2 >= 600) {
-        x = 600 - box.w
-      }
-
-      if (box.y2 > 600) {
-        y = 600 - box.h
-      }
-
-      handler.move(x - (x % 100), y - (y % 100))
+    // 画色子
+    this.dices.forEach((dice) => {
+      const number = String.fromCharCode(97 + dice.x) + (dice.y + 1)
+      this.drawDice(draw, dice.x, dice.y, number.toString())
     })
+
+    // var rect = draw.rect(100, 100).move(700, 0).attr({ fill: '#bbb' })
+    // rect.draggable()
   },
   data() {
     return {
-      dices: [],
+      pieces: [
+        { rects: [{ x: 0, y: 0 }], color: '#ffa500' },
+        {
+          rects: [
+            { x: 0, y: 0 },
+            { x: 0, y: 1 },
+          ],
+          color: '#ff5a00',
+        },
+      ],
+      dices: this.generateDices(),
+      constraints: {
+        x: { min: 0, max: 800 },
+        y: { min: 0, max: 800 },
+      },
     }
   },
 }
