@@ -14,8 +14,58 @@ const height = 100
 
 export default {
   methods: {
+    isBlocked(x, y) {
+      return this.blocked.includes(`${x},${y}`)
+    },
+    width(piece) {
+      let x1 = 0,
+        x2 = 0
+      for (let i = 0; i < piece['rects'].length; i++) {
+        const rect = piece['rects'][i]
+        x1 = Math.min(x1, rect['x'])
+        x2 = Math.max(x2, rect['x'])
+      }
+      return x2 - x1 + 1
+    },
+    height(piece) {
+      let y1 = 0,
+        y2 = 0
+      for (let i = 0; i < piece['rects'].length; i++) {
+        const rect = piece['rects'][i]
+        y1 = Math.min(y1, rect['y'])
+        y2 = Math.max(y2, rect['y'])
+      }
+      return y2 - y1 + 1
+    },
+
+    rotatePiece(draw, piece) {
+      let height = this.height(piece)
+      for (let i = 0; i < piece['rects'].length; i++) {
+        const rect = piece['rects'][i]
+        let x = rect['x']
+        let y = rect['y']
+
+        rect['x'] = -y + height - 1
+        rect['y'] = x
+        console.log('rotate', x, y, 'to', rect['x'], rect['y'])
+      }
+      console.log('rotatePiece', piece['rects'])
+      this.drawPiece(draw, piece)
+    },
+
+    moveGroupToPieceBox(group, piece) {
+      let center = piece['center']
+      group.move(
+        (center['x'] - this.width(piece) / 2) * width + this.piecesBox['x1'],
+        (center['y'] - this.height(piece) / 2) * height + this.piecesBox['y1'],
+      )
+      piece['currentPos'] = null
+    },
+
     drawPiece(draw, piece) {
-      console.log(piece)
+      console.log('drawPiece', piece)
+
+      let vc = this
 
       const color = piece['color']
 
@@ -23,19 +73,29 @@ export default {
       for (let i = 0; i < piece['rects'].length; i++) {
         const rect = piece['rects'][i]
         let e = draw
-          .rect(100, 100)
-          .move(rect['x'] * 100, rect['y'] * 100)
+          .rect(width, height)
+          .move(rect['x'] * width, rect['y'] * height)
           .fill(color)
         group.add(e)
       }
 
-      const originX = 600
-      const originY = 0
-      group.move(originX, originY)
+      const center = piece['center']
+      console.log(
+        'width',
+        this.width(piece),
+        'height',
+        this.height(piece),
+        'move to',
+        (center['x'] - this.width(piece) / 2) * width + this.piecesBox['x1'],
+        (center['y'] - this.height(piece) / 2) * height + this.piecesBox['y1'],
+      )
+      vc.moveGroupToPieceBox(group, piece)
 
-      // 使组可拖拽
       group.draggable()
+
       group.on('dragmove.namespace', (e) => {
+        console.log('dragmove')
+
         const { handler, box } = e.detail
         e.preventDefault()
 
@@ -59,20 +119,81 @@ export default {
 
         handler.move(x - (x % 50), y - (y % 50))
       })
+
+      group.on('dragstart.namespace', function (e) {
+        const { box } = e.detail
+
+        let { x, y } = box
+        console.log('drag start', x, y)
+        this.data({ startX: x, startY: y })
+
+        // remove blocked cell
+        let currentPos = piece['currentPos']
+        if (currentPos) {
+          for (let i = 0; i < piece['rects'].length; i++) {
+            let rect = piece['rects'][i]
+            vc.blocked.splice(
+              vc.blocked.indexOf(`${rect['x'] + currentPos['x']},${rect['y'] + currentPos['y']}`),
+              1,
+            )
+          }
+        }
+      })
+
       group.on('dragend.namespace', function (e) {
         const { box } = e.detail
         e.preventDefault()
 
         let { x, y } = box
 
-        console.log(parseInt(x / width), parseInt(y / height))
-        group.move(originX, originY)
+        let x1 = parseInt(x / width)
+        let y1 = parseInt(y / height)
+        console.log('drag end', x, y, x1, y1)
+
+        if (x1 >= 6 || y1 >= 6 || x1 < 0 || y1 < 0) {
+          // if distance is less than 1, consider it as a click
+          let startX = this.data('startX')
+          let startY = this.data('startY')
+
+          var distance = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2))
+          console.log('distance', distance)
+          if (distance < 1) {
+            group.remove()
+            vc.rotatePiece(draw, piece)
+            return
+          }
+          vc.moveGroupToPieceBox(group, piece)
+          return
+        }
+
+        // check if the piece is blocked
+        console.log('block cells', vc.blocked)
+        for (let i = 0; i < piece['rects'].length; i++) {
+          let rect = piece['rects'][i]
+
+          console.log('check block', rect['x'], rect['y'], rect['x'] + x1, rect['y'] + y1)
+
+          if (vc.isBlocked(rect['x'] + x1, rect['y'] + y1)) {
+            console.log('block at', rect['x'] + x1, rect['y'] + y1)
+            vc.moveGroupToPieceBox(group, piece)
+            return
+          }
+        }
+
+        // update blocked cell
+
+        piece['currentPos'] = { x: x1, y: y1 }
+        for (let i = 0; i < piece['rects'].length; i++) {
+          let rect = piece['rects'][i]
+          vc.blocked.push(`${rect['x'] + x1},${rect['y'] + y1}`)
+        }
       })
     },
+
     drawDice(draw, x, y, number) {
-      const diceSize = 100 * 0.8
-      const diceX = 100 * 0.1 + x * 100
-      const diceY = 100 * 0.1 + y * 100
+      const diceSize = ((width + height) / 2) * 0.8
+      const diceX = width * 0.1 + x * width
+      const diceY = height * 0.1 + y * height
 
       // 画色子的背景
       draw.rect(diceSize, diceSize).move(diceX, diceY).fill('#f80')
@@ -103,13 +224,21 @@ export default {
         }
       }
 
+      // update blocked cells
+      for (let i = 0; i < coordinates.length; i++) {
+        const { x, y } = coordinates[i]
+        this.blocked.push(`${x},${y}`)
+      }
       return coordinates
     },
   },
   mounted() {
     var draw = SVG().addTo('#gamebox').size(this.constraints.x.max, this.constraints.y.max)
+    this.dices = this.generateDices()
 
     // 画棋盘
+    draw.line(0, 0, 600, 0)
+    draw.line(0, 600, 600, 0)
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 6; j++) {
         const color = (i + j) % 2 === 0 ? '#ffffff' : '#cccccc'
@@ -120,6 +249,7 @@ export default {
       }
     }
 
+    // 画棋子
     for (let i = 0; i < this.pieces.length; i++) {
       this.drawPiece(draw, this.pieces[i])
     }
@@ -129,27 +259,109 @@ export default {
       const number = String.fromCharCode(97 + dice.x) + (dice.y + 1)
       this.drawDice(draw, dice.x, dice.y, number.toString())
     })
-
-    // var rect = draw.rect(100, 100).move(700, 0).attr({ fill: '#bbb' })
-    // rect.draggable()
+  },
+  computed: {
+    constraints() {
+      return {
+        x: { min: 0, max: this.piecesBox['x2'] },
+        y: { min: 0, max: this.piecesBox['y2'] },
+      }
+    },
   },
   data() {
     return {
+      blocked: [],
+      board: { x1: 0, y1: 0, x2: 600, y2: 600 },
+      piecesBox: { x1: 620, y1: 0, x2: 1220, y2: 600 },
+      // piece 里面的 rects 是相对于矩形 group 左上角的坐标. center 是相对于 pieceBox 的坐标, 旋转的圆心
       pieces: [
-        { rects: [{ x: 0, y: 0 }], color: '#ffa500' },
+        { rects: [{ x: 0, y: 0 }], color: '#ffa500', center: { x: 1.5, y: 0.5 }, currentPos: null },
+        {
+          rects: [
+            { x: 1, y: 0 },
+            { x: 1, y: 1 },
+            { x: 0, y: 1 },
+            { x: 0, y: 2 },
+          ],
+          color: 'lightblue',
+          center: { x: 2, y: 1.5 },
+          currentPos: null,
+        },
+        {
+          rects: [
+            { x: 0, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: 2 },
+            { x: 0, y: 3 },
+          ],
+          color: '#3a3f3b',
+          center: { x: 3.5, y: 2 },
+          currentPos: null,
+        },
+        {
+          rects: [
+            { x: 0, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: 2 },
+          ],
+          color: '#ffa500',
+          center: { x: 4.5, y: 1.5 },
+          currentPos: null,
+        },
+        {
+          rects: [
+            { x: 0, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: 2 },
+            { x: 1, y: 2 },
+          ],
+          color: 'darkblue',
+          center: { x: 1, y: 2.5 },
+          currentPos: null,
+        },
         {
           rects: [
             { x: 0, y: 0 },
             { x: 0, y: 1 },
           ],
-          color: '#ff5a00',
+          color: '#ffa500',
+          center: { x: 2.5, y: 3 },
+          currentPos: null,
+        },
+        {
+          rects: [
+            { x: 1, y: 0 },
+            { x: 1, y: 1 },
+            { x: 0, y: 1 },
+            { x: 1, y: 2 },
+          ],
+          color: 'darkblue',
+          center: { x: 4, y: 4.5 },
+          currentPos: null,
+        },
+        {
+          rects: [
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 1, y: 1 },
+          ],
+          color: '#3a3f3b',
+          center: { x: 1, y: 5 },
+          currentPos: null,
+        },
+        {
+          rects: [
+            { x: 0, y: 0 },
+            { x: 0, y: 1 },
+            { x: 1, y: 1 },
+          ],
+          color: 'lightblue',
+          center: { x: 3, y: 5 },
+          currentPos: null,
         },
       ],
-      dices: this.generateDices(),
-      constraints: {
-        x: { min: 0, max: 800 },
-        y: { min: 0, max: 800 },
-      },
+      dices: [],
     }
   },
 }
