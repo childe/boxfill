@@ -62,6 +62,12 @@ export default {
       piece['currentPos'] = null
     },
 
+    inBoard(x, y, piece) {
+      let width = this.width(piece)
+      let height = this.height(piece)
+      return x >= 0 && y >= 0 && x + width <= 6 && y + height <= 6
+    },
+
     drawPiece(draw, piece) {
       console.log('drawPiece', piece)
 
@@ -117,7 +123,21 @@ export default {
           y = this.constraints.y.max - box.h
         }
 
-        handler.move(x - (x % 50), y - (y % 50))
+        let t = x % width
+        if (t < width / 2) {
+          x = x - t
+        } else {
+          x = x + width - t
+        }
+
+        t = y % height
+        if (t < height / 2) {
+          y = y - t
+        } else {
+          y = y + height - t
+        }
+
+        handler.move(x, y - (y % 50))
       })
 
       group.on('dragstart.namespace', function (e) {
@@ -126,6 +146,8 @@ export default {
         let { x, y } = box
         console.log('drag start', x, y)
         this.data({ startX: x, startY: y })
+
+        group.front()
 
         // remove blocked cell
         let currentPos = piece['currentPos']
@@ -150,7 +172,8 @@ export default {
         let y1 = parseInt(y / height)
         console.log('drag end', x, y, x1, y1)
 
-        if (x1 >= 6 || y1 >= 6 || x1 < 0 || y1 < 0) {
+        // the piece is NOT in the board
+        if (!vc.inBoard(x1, y1, piece)) {
           // if distance is less than 1, consider it as a click
           let startX = this.data('startX')
           let startY = this.data('startY')
