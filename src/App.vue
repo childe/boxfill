@@ -68,6 +68,16 @@ export default {
       return x >= 0 && y >= 0 && x + width <= 6 && y + height <= 6
     },
 
+    ifDone() {
+      for (let i = 0; i < this.pieces.length; i++) {
+        let piece = this.pieces[i]
+        if (piece['currentPos'] === null) {
+          return false
+        }
+      }
+      return true
+    },
+
     drawPiece(draw, piece) {
       console.log('drawPiece', piece)
 
@@ -123,21 +133,21 @@ export default {
           y = this.constraints.y.max - box.h
         }
 
-        let t = x % width
-        if (t < width / 2) {
-          x = x - t
-        } else {
-          x = x + width - t
-        }
+        // let t = x % width
+        // if (t < width / 2) {
+        //   x = x - t
+        // } else {
+        //   x = x + width - t
+        // }
 
-        t = y % height
-        if (t < height / 2) {
-          y = y - t
-        } else {
-          y = y + height - t
-        }
+        // t = y % height
+        // if (t < height / 2) {
+        //   y = y - t
+        // } else {
+        //   y = y + height - t
+        // }
 
-        handler.move(x, y - (y % 50))
+        handler.move(x - (x % 100), y - (y % 100))
       })
 
       group.on('dragstart.namespace', function (e) {
@@ -170,7 +180,7 @@ export default {
 
         let x1 = parseInt(x / width)
         let y1 = parseInt(y / height)
-        console.log('drag end', x, y, x1, y1)
+        console.log('drag end', x, y, x1, y1, piece)
 
         // the piece is NOT in the board
         if (!vc.inBoard(x1, y1, piece)) {
@@ -209,6 +219,10 @@ export default {
         for (let i = 0; i < piece['rects'].length; i++) {
           let rect = piece['rects'][i]
           vc.blocked.push(`${rect['x'] + x1},${rect['y'] + y1}`)
+        }
+
+        if (vc.ifDone()) {
+          alert('Congratulations!')
         }
       })
     },
