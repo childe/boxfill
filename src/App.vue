@@ -1,8 +1,13 @@
 <template>
-  <div
-    id="gamebox"
-    style="height: {{constraints.y.max}}px; width: {{constraints.x.max}}px; border: solid black 1px"
-  ></div>
+  <div style="display: flex; margin-top: 20px">
+    <div id="actions" style="margin-right: 20px">
+      <button @click="roll">Roll Dices</button>
+    </div>
+    <div
+      id="gamebox"
+      style="height: {{constraints.y.max}}px; width: {{constraints.x.max}}px; border: solid black 1px"
+    ></div>
+  </div>
 </template>
 
 <script>
@@ -251,6 +256,8 @@ export default {
           alert('Congratulations!')
         }
       })
+
+      return group
     },
 
     drawDice(draw, x, y, number) {
@@ -259,18 +266,22 @@ export default {
       const diceY = height * 0.1 + y * height
 
       // 画色子的背景
-      draw.rect(diceSize, diceSize).move(diceX, diceY).fill('#f80')
+      let group = draw.group()
+      group.add(draw.rect(diceSize, diceSize).move(diceX, diceY).fill('#f80'))
 
       // 画色子上的数字
       const fontSize = diceSize * 0.5
-      draw
-        .text(number)
-        .font({
-          size: fontSize,
-          family: 'Arial',
-          fill: '#ffffff',
-        })
-        .move(diceX + diceSize / 2 - fontSize / 2, diceY + diceSize / 2 - fontSize / 2)
+      group.add(
+        draw
+          .text(number)
+          .font({
+            size: fontSize,
+            family: 'Arial',
+            fill: '#ffffff',
+          })
+          .move(diceX + diceSize / 2 - fontSize / 2, diceY + diceSize / 2 - fontSize / 2),
+      )
+      return group
     },
     rollDices() {
       const used = new Set()
@@ -288,14 +299,43 @@ export default {
       }
 
       // update blocked cells
+      this.blocked = []
       for (let i = 0; i < this.dices.length; i++) {
         let point = this.dices[i].point()
         this.blocked.push(`${point.x},${point.y}`)
       }
     },
+    drawDices() {
+      if (this.diceGroup) {
+        this.diceGroup.remove()
+      }
+
+      this.diceGroup = this.draw.group()
+      this.dices.forEach((dice) => {
+        let point = dice.points[dice.idx]
+        const number = String.fromCharCode(97 + point.x) + (point.y + 1)
+        this.diceGroup.add(this.drawDice(this.draw, point.x, point.y, number.toString()))
+      })
+    },
+    drawPieces() {
+      if (this.pieceGroup) {
+        this.pieceGroup.remove()
+      }
+
+      this.pieceGroup = this.draw.group()
+      for (let i = 0; i < this.pieces.length; i++) {
+        this.pieceGroup.add(this.drawPiece(this.draw, this.pieces[i]))
+      }
+    },
+    roll() {
+      this.rollDices()
+      this.drawDices()
+      this.drawPieces()
+    },
   },
   mounted() {
     var draw = SVG().addTo('#gamebox').size(this.constraints.x.max, this.constraints.y.max)
+    this.draw = draw
     this.rollDices()
 
     // 画棋盘
@@ -312,16 +352,10 @@ export default {
     }
 
     // 画棋子
-    for (let i = 0; i < this.pieces.length; i++) {
-      this.drawPiece(draw, this.pieces[i])
-    }
+    this.drawPieces()
 
     // 画色子
-    this.dices.forEach((dice) => {
-      let point = dice.points[dice.idx]
-      const number = String.fromCharCode(97 + point.x) + (point.y + 1)
-      this.drawDice(draw, point.x, point.y, number.toString())
-    })
+    this.drawDices(draw)
   },
   computed: {
     constraints() {
@@ -333,6 +367,10 @@ export default {
   },
   data() {
     return {
+      draw: null,
+      diceGroup: null,
+      pieceGroup: null,
+
       blocked: [],
       board: { x1: 0, y1: 0, x2: 600, y2: 600 },
       piecesBox: { x1: 700, y1: 0, x2: 1300, y2: 600 },
