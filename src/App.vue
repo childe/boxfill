@@ -12,6 +12,32 @@ import '@svgdotjs/svg.draggable.js'
 const width = 100
 const height = 100
 
+class Point {
+  constructor(x, y) {
+    this.x = x
+    this.y = y
+  }
+  hashCode() {
+    return `${this.x},${this.y}`
+  }
+}
+
+class Dice {
+  constructor(points) {
+    this.points = points
+    this.idx = 0
+  }
+  point() {
+    return this.points[this.idx]
+  }
+  roll() {
+    this.idx = Math.floor(Math.random() * this.points.length)
+  }
+  hashCode() {
+    return this.points[this.idx].hashCode()
+  }
+}
+
 export default {
   methods: {
     isBlocked(x, y) {
@@ -246,32 +272,31 @@ export default {
         })
         .move(diceX + diceSize / 2 - fontSize / 2, diceY + diceSize / 2 - fontSize / 2)
     },
-    generateDices() {
-      const coordinates = []
+    rollDices() {
       const used = new Set()
 
-      while (coordinates.length < 6) {
-        const x = Math.floor(Math.random() * 6)
-        const y = Math.floor(Math.random() * 6)
-        const key = `${x},${y}`
+      for (let i = 0; i < this.dices.length; i++) {
+        while (true) {
+          this.dices[i].roll()
+          const key = this.dices[i].hashCode()
 
-        if (!used.has(key)) {
-          coordinates.push({ x, y })
-          used.add(key)
+          if (!used.has(key)) {
+            used.add(key)
+            break
+          }
         }
       }
 
       // update blocked cells
-      for (let i = 0; i < coordinates.length; i++) {
-        const { x, y } = coordinates[i]
-        this.blocked.push(`${x},${y}`)
+      for (let i = 0; i < this.dices.length; i++) {
+        let point = this.dices[i].point()
+        this.blocked.push(`${point.x},${point.y}`)
       }
-      return coordinates
     },
   },
   mounted() {
     var draw = SVG().addTo('#gamebox').size(this.constraints.x.max, this.constraints.y.max)
-    this.dices = this.generateDices()
+    this.rollDices()
 
     // 画棋盘
     draw.line(0, 0, 600, 0)
@@ -293,8 +318,9 @@ export default {
 
     // 画色子
     this.dices.forEach((dice) => {
-      const number = String.fromCharCode(97 + dice.x) + (dice.y + 1)
-      this.drawDice(draw, dice.x, dice.y, number.toString())
+      let point = dice.points[dice.idx]
+      const number = String.fromCharCode(97 + point.x) + (point.y + 1)
+      this.drawDice(draw, point.x, point.y, number.toString())
     })
   },
   computed: {
@@ -309,7 +335,7 @@ export default {
     return {
       blocked: [],
       board: { x1: 0, y1: 0, x2: 600, y2: 600 },
-      piecesBox: { x1: 620, y1: 0, x2: 1220, y2: 600 },
+      piecesBox: { x1: 700, y1: 0, x2: 1300, y2: 600 },
       // piece 里面的 rects 是相对于矩形 group 左上角的坐标. center 是相对于 pieceBox 的坐标, 旋转的圆心
       pieces: [
         { rects: [{ x: 0, y: 0 }], color: '#ffa500', center: { x: 1.5, y: 0.5 }, currentPos: null },
@@ -398,7 +424,64 @@ export default {
           currentPos: null,
         },
       ],
-      dices: [],
+      dices: [
+        new Dice([
+          new Point(0, 0),
+          new Point(1, 0),
+          new Point(2, 0),
+          new Point(3, 0),
+          new Point(4, 0),
+          new Point(5, 0),
+        ]),
+        new Dice([
+          new Point(0, 1),
+          new Point(1, 1),
+          new Point(2, 1),
+          new Point(3, 1),
+          new Point(4, 1),
+          new Point(5, 1),
+        ]),
+        new Dice([
+          new Point(0, 2),
+          new Point(1, 2),
+          new Point(2, 2),
+          new Point(3, 2),
+          new Point(4, 2),
+          new Point(5, 2),
+        ]),
+        new Dice([
+          new Point(0, 3),
+          new Point(1, 3),
+          new Point(2, 3),
+          new Point(3, 3),
+          new Point(4, 3),
+          new Point(5, 3),
+        ]),
+        new Dice([
+          new Point(0, 4),
+          new Point(1, 4),
+          new Point(2, 4),
+          new Point(3, 4),
+          new Point(4, 4),
+          new Point(5, 4),
+        ]),
+        new Dice([
+          new Point(0, 5),
+          new Point(1, 5),
+          new Point(2, 5),
+          new Point(3, 5),
+          new Point(4, 5),
+          new Point(5, 5),
+        ]),
+        new Dice([
+          new Point(0, 0),
+          new Point(1, 1),
+          new Point(2, 2),
+          new Point(3, 3),
+          new Point(4, 4),
+          new Point(5, 5),
+        ]),
+      ],
     }
   },
 }
