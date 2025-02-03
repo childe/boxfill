@@ -32,6 +32,44 @@ class Point {
   }
 }
 
+class Piece {
+  constructor(name, points, color, center) {
+    this.name = name
+    this.origin = points.slice()
+    this.points = points.slice()
+    this.color = color
+    this.center = center
+    this.currentPos = null
+  }
+  height() {
+    let y1 = 0,
+      y2 = 0
+    for (let i = 0; i < this.points.length; i++) {
+      const p = this.points[i]
+      y1 = Math.min(y1, p.y)
+      y2 = Math.max(y2, p.y)
+    }
+    return y2 - y1 + 1
+  }
+
+  rotate() {
+    const height = this.height()
+    for (let i = 0; i < this.points.length; i++) {
+      const p = this.points[i]
+      let x = p.x
+      let y = p.y
+
+      p.x = -y + height - 1
+      p.y = x
+      console.debug('rotate', x, y, 'to', p.x, p.y)
+    }
+  }
+  reset() {
+    this.points = this.origin.slice()
+    this.currentPos = null
+  }
+}
+
 class Dice {
   constructor(points) {
     this.points = points
@@ -86,7 +124,7 @@ export default {
         console.log('rotate', x, y, 'to', rect['x'], rect['y'])
       }
       console.log('rotatePiece', piece['rects'])
-      this.drawPiece(draw, piece)
+      this.pieceGroup.add(this.drawPiece(draw, piece))
     },
 
     moveGroupToPieceBox(group, piece) {
@@ -337,11 +375,43 @@ export default {
       this.drawDices()
       this.drawPieces()
     },
+    getRollFromHash() {
+      const hash = window.location.hash
+      if (hash) {
+        const params = hash.substring(1).split('&')
+        for (const param of params) {
+          const [key, value] = param.split('=')
+          if (key === 'roll') {
+            return value
+          }
+        }
+      }
+      return null
+    },
   },
   mounted() {
+    const roll = this.getRollFromHash()
+    if (roll !== null) {
+      for (let i = 0; i < roll.length; i += 2) {
+        let dice = roll.slice(i, i + 2)
+        let x = dice.toUpperCase().charCodeAt(0) - 65
+        let y = parseInt(dice[1]) - 1
+        let d = this.dices[i / 2]
+        d.idx = d.points.findIndex((p) => p.x === x && p.y === y)
+
+        // update blocked cells
+        this.blocked = []
+        for (let i = 0; i < this.dices.length; i++) {
+          let point = this.dices[i].point()
+          this.blocked.push(`${point.x},${point.y}`)
+        }
+      }
+    } else {
+      this.rollDices()
+    }
+
     var draw = SVG().addTo('#gamebox').size(this.constraints.x.max, this.constraints.y.max)
     this.draw = draw
-    this.rollDices()
 
     // 画棋盘
     // draw.line(0, 0, 6 * width, 0).stroke({ width: 1, color: 'black' })
@@ -472,50 +542,50 @@ export default {
       dices: [
         new Dice([
           new Point(0, 0),
-          new Point(1, 0),
-          new Point(2, 0),
-          new Point(3, 0),
-          new Point(4, 0),
-          new Point(5, 0),
-        ]),
-        new Dice([
           new Point(0, 1),
-          new Point(1, 1),
-          new Point(2, 1),
-          new Point(3, 1),
-          new Point(4, 1),
-          new Point(5, 1),
-        ]),
-        new Dice([
           new Point(0, 2),
-          new Point(1, 2),
-          new Point(2, 2),
-          new Point(3, 2),
-          new Point(4, 2),
-          new Point(5, 2),
-        ]),
-        new Dice([
           new Point(0, 3),
-          new Point(1, 3),
-          new Point(2, 3),
-          new Point(3, 3),
-          new Point(4, 3),
-          new Point(5, 3),
-        ]),
-        new Dice([
           new Point(0, 4),
-          new Point(1, 4),
-          new Point(2, 4),
-          new Point(3, 4),
-          new Point(4, 4),
-          new Point(5, 4),
+          new Point(0, 5),
         ]),
         new Dice([
-          new Point(0, 5),
+          new Point(1, 0),
+          new Point(1, 1),
+          new Point(1, 2),
+          new Point(1, 3),
+          new Point(1, 4),
           new Point(1, 5),
+        ]),
+        new Dice([
+          new Point(2, 0),
+          new Point(2, 1),
+          new Point(2, 2),
+          new Point(2, 3),
+          new Point(2, 4),
           new Point(2, 5),
+        ]),
+        new Dice([
+          new Point(3, 0),
+          new Point(3, 1),
+          new Point(3, 2),
+          new Point(3, 3),
+          new Point(3, 4),
           new Point(3, 5),
+        ]),
+        new Dice([
+          new Point(4, 0),
+          new Point(4, 1),
+          new Point(4, 2),
+          new Point(4, 3),
+          new Point(4, 4),
           new Point(4, 5),
+        ]),
+        new Dice([
+          new Point(5, 0),
+          new Point(5, 1),
+          new Point(5, 2),
+          new Point(5, 3),
+          new Point(5, 4),
           new Point(5, 5),
         ]),
         new Dice([
