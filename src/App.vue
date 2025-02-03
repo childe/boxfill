@@ -310,13 +310,6 @@ export default {
           }
         }
       }
-
-      // update blocked cells
-      this.blocked = []
-      for (let i = 0; i < this.dices.length; i++) {
-        let point = this.dices[i].point()
-        this.blocked.push(`${point.x},${point.y}`)
-      }
     },
     drawDices() {
       if (this.diceGroup) {
@@ -329,6 +322,13 @@ export default {
         const number = String.fromCharCode(97 + point.x) + (point.y + 1)
         this.diceGroup.add(this.drawDice(this.draw, point.x, point.y, number.toString()))
       })
+
+      // update blocked cells
+      this.blocked = []
+      for (let i = 0; i < this.dices.length; i++) {
+        let point = this.dices[i].point()
+        this.blocked.push(`${point.x},${point.y}`)
+      }
     },
 
     drawPieces() {
@@ -341,30 +341,28 @@ export default {
         this.pieceGroup.add(this.drawPiece(this.draw, this.pieces[i]))
       }
     },
+
+    generateRoll() {
+      let roll = ''
+      for (let i = 0; i < this.dices.length; i++) {
+        let point = this.dices[i].point()
+        roll += String.fromCharCode(97 + point.x) + (point.y + 1)
+      }
+      return roll
+    },
+
     roll() {
       this.rollDices()
-      this.drawDices()
-      this.pieces.forEach((p) => {
-        p.reset()
-      })
-      this.drawPieces()
+      window.location.search = '?roll=' + this.generateRoll()
+      return false
     },
-    getRollFromHash() {
-      const hash = window.location.hash
-      if (hash) {
-        const params = hash.substring(1).split('&')
-        for (const param of params) {
-          const [key, value] = param.split('=')
-          if (key === 'roll') {
-            return value
-          }
-        }
-      }
-      return null
+    getRollFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search)
+      return urlParams.get('roll')
     },
   },
   mounted() {
-    const roll = this.getRollFromHash()
+    const roll = this.getRollFromUrl()
     if (roll !== null) {
       for (let i = 0; i < roll.length; i += 2) {
         let dice = roll.slice(i, i + 2)
