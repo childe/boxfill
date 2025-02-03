@@ -1,7 +1,7 @@
 <template>
   <div style="display: flex; margin-top: 20px">
     <div id="actions" style="margin-right: 20px">
-      <button @click="roll">Roll Dices</button>
+      <button @click="roll">Roll</button>
     </div>
     <div
       id="gamebox"
@@ -14,8 +14,8 @@
 import { SVG } from '@svgdotjs/svg.js'
 import '@svgdotjs/svg.draggable.js'
 
-const width = 100
-const height = 100
+const width = 30
+const height = 30
 
 class Point {
   constructor(x, y) {
@@ -178,7 +178,7 @@ export default {
         //   y = y + height - t
         // }
 
-        handler.move(x - (x % 100), y - (y % 100))
+        handler.move(x - (x % width), y - (y % height))
       })
 
       group.on('dragstart.namespace', function (e) {
@@ -339,14 +339,14 @@ export default {
     this.rollDices()
 
     // 画棋盘
-    draw.line(0, 0, 600, 0)
-    draw.line(0, 600, 600, 0)
+    draw.line(0, 0, 6 * width, 0)
+    draw.line(0, 6 * width, 6 * height, 0)
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 6; j++) {
         const color = (i + j) % 2 === 0 ? '#ffffff' : '#cccccc'
         draw
-          .rect(100, 100)
-          .move(j * 100, i * 100)
+          .rect(width, height)
+          .move(j * width, i * height)
           .fill(color)
       }
     }
@@ -372,8 +372,8 @@ export default {
       pieceGroup: null,
 
       blocked: [],
-      board: { x1: 0, y1: 0, x2: 600, y2: 600 },
-      piecesBox: { x1: 700, y1: 0, x2: 1300, y2: 600 },
+      board: { x1: 0, y1: 0, x2: 6 * width, y2: 6 * width },
+      piecesBox: { x1: 7 * width, y1: 0, x2: 13 * width, y2: 6 * width },
       // piece 里面的 rects 是相对于矩形 group 左上角的坐标. center 是相对于 pieceBox 的坐标, 旋转的圆心
       pieces: [
         { rects: [{ x: 0, y: 0 }], color: '#ffa500', center: { x: 1.5, y: 0.5 }, currentPos: null },
