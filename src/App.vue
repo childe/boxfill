@@ -35,12 +35,24 @@ class Point {
 class Piece {
   constructor(name, points, color, center) {
     this.name = name
-    this.origin = points.slice()
-    this.points = points.slice()
+    this.origin = JSON.parse(JSON.stringify(points))
+    this.points = JSON.parse(JSON.stringify(points))
     this.color = color
     this.center = center
     this.currentPos = null
   }
+
+  width() {
+    let x1 = 0,
+      x2 = 0
+    for (let i = 0; i < this.points.length; i++) {
+      const p = this.points[i]
+      x1 = Math.min(x1, p.x)
+      x2 = Math.max(x2, p.x)
+    }
+    return x2 - x1 + 1
+  }
+
   height() {
     let y1 = 0,
       y2 = 0
@@ -63,9 +75,10 @@ class Piece {
       p.y = x
       console.debug('rotate', x, y, 'to', p.x, p.y)
     }
+    console.debug('rotate', this.origin, this.points)
   }
   reset() {
-    this.points = this.origin.slice()
+    this.points = JSON.parse(JSON.stringify(this.origin))
     this.currentPos = null
   }
 }
@@ -91,61 +104,34 @@ export default {
     isBlocked(x, y) {
       return this.blocked.includes(`${x},${y}`)
     },
-    width(piece) {
-      let x1 = 0,
-        x2 = 0
-      for (let i = 0; i < piece['rects'].length; i++) {
-        const rect = piece['rects'][i]
-        x1 = Math.min(x1, rect['x'])
-        x2 = Math.max(x2, rect['x'])
-      }
-      return x2 - x1 + 1
-    },
-    height(piece) {
-      let y1 = 0,
-        y2 = 0
-      for (let i = 0; i < piece['rects'].length; i++) {
-        const rect = piece['rects'][i]
-        y1 = Math.min(y1, rect['y'])
-        y2 = Math.max(y2, rect['y'])
-      }
-      return y2 - y1 + 1
-    },
-
-    rotatePiece(draw, piece) {
-      let height = this.height(piece)
-      for (let i = 0; i < piece['rects'].length; i++) {
-        const rect = piece['rects'][i]
-        let x = rect['x']
-        let y = rect['y']
-
-        rect['x'] = -y + height - 1
-        rect['y'] = x
-        console.log('rotate', x, y, 'to', rect['x'], rect['y'])
-      }
-      console.log('rotatePiece', piece['rects'])
-      this.pieceGroup.add(this.drawPiece(draw, piece))
-    },
 
     moveGroupToPieceBox(group, piece) {
-      let center = piece['center']
+      let center = piece.center
+      console.debug('center', center, piece.width() / 2, piece.height() / 2)
       group.move(
-        (center['x'] - this.width(piece) / 2) * width + this.piecesBox['x1'],
-        (center['y'] - this.height(piece) / 2) * height + this.piecesBox['y1'],
+        (center.x - piece.width() / 2) * width + this.piecesBox['x1'],
+        (center.y - piece.height() / 2) * height + this.piecesBox['y1'],
       )
-      piece['currentPos'] = null
+      console.debug(
+        'move to',
+        center.x - piece.width() / 2,
+        center.y - piece.height() / 2,
+        (center.x - piece.width() / 2) * width + this.piecesBox['x1'],
+        (center.y - piece.height() / 2) * height + this.piecesBox['y1'],
+      )
+      piece.currentPos = null
     },
 
     inBoard(x, y, piece) {
-      let width = this.width(piece)
-      let height = this.height(piece)
+      let width = piece.width()
+      let height = piece.height()
       return x >= 0 && y >= 0 && x + width <= 6 && y + height <= 6
     },
 
     ifDone() {
       for (let i = 0; i < this.pieces.length; i++) {
         let piece = this.pieces[i]
-        if (piece['currentPos'] === null) {
+        if (piece.currentPos === null) {
           return false
         }
       }
@@ -157,27 +143,27 @@ export default {
 
       let vc = this
 
-      const color = piece['color']
+      const color = piece.color
 
       const group = draw.group()
-      for (let i = 0; i < piece['rects'].length; i++) {
-        const rect = piece['rects'][i]
+      for (let i = 0; i < piece.points.length; i++) {
+        const p = piece.points[i]
         let e = draw
           .rect(width, height)
-          .move(rect['x'] * width, rect['y'] * height)
+          .move(p.x * width, p.y * height)
           .fill(color)
         group.add(e)
       }
 
-      const center = piece['center']
+      const center = piece.center
       console.log(
         'width',
-        this.width(piece),
+        piece.width(),
         'height',
-        this.height(piece),
+        piece.height(),
         'move to',
-        (center['x'] - this.width(piece) / 2) * width + this.piecesBox['x1'],
-        (center['y'] - this.height(piece) / 2) * height + this.piecesBox['y1'],
+        (center.x - piece.width / 2) * width + this.piecesBox['x1'],
+        (center.y - piece.height() / 2) * height + this.piecesBox['y1'],
       )
       vc.moveGroupToPieceBox(group, piece)
 
@@ -207,20 +193,6 @@ export default {
           y = this.constraints.y.max - box.h
         }
 
-        // let t = x % width
-        // if (t < width / 2) {
-        //   x = x - t
-        // } else {
-        //   x = x + width - t
-        // }
-
-        // t = y % height
-        // if (t < height / 2) {
-        //   y = y - t
-        // } else {
-        //   y = y + height - t
-        // }
-
         handler.move(x - (x % width), y - (y % height))
       })
 
@@ -236,12 +208,9 @@ export default {
         // remove blocked cell
         let currentPos = piece['currentPos']
         if (currentPos) {
-          for (let i = 0; i < piece['rects'].length; i++) {
-            let rect = piece['rects'][i]
-            vc.blocked.splice(
-              vc.blocked.indexOf(`${rect['x'] + currentPos['x']},${rect['y'] + currentPos['y']}`),
-              1,
-            )
+          for (let i = 0; i < piece.points.length; i++) {
+            let p = piece.points[i]
+            vc.blocked.splice(vc.blocked.indexOf(`${p.x + currentPos.x},${p.y + currentPos.y}`), 1)
           }
         }
       })
@@ -265,8 +234,9 @@ export default {
           var distance = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2))
           console.log('distance', distance)
           if (distance < 1) {
+            piece.rotate()
             group.remove()
-            vc.rotatePiece(draw, piece)
+            vc.pieceGroup.add(vc.drawPiece(draw, piece))
             return
           }
           vc.moveGroupToPieceBox(group, piece)
@@ -275,13 +245,13 @@ export default {
 
         // check if the piece is blocked
         console.log('block cells', vc.blocked)
-        for (let i = 0; i < piece['rects'].length; i++) {
-          let rect = piece['rects'][i]
+        for (let i = 0; i < piece.points.length; i++) {
+          let p = piece.points[i]
 
-          console.log('check block', rect['x'], rect['y'], rect['x'] + x1, rect['y'] + y1)
+          // console.log('check block', p['x'], p['y'], p['x'] + x1, p['y'] + y1)
 
-          if (vc.isBlocked(rect['x'] + x1, rect['y'] + y1)) {
-            console.log('block at', rect['x'] + x1, rect['y'] + y1)
+          if (vc.isBlocked(p.x + x1, p.y + y1)) {
+            console.log('block at', p.x + x1, p.y + y1)
             vc.moveGroupToPieceBox(group, piece)
             return
           }
@@ -289,10 +259,10 @@ export default {
 
         // update blocked cell
 
-        piece['currentPos'] = { x: x1, y: y1 }
-        for (let i = 0; i < piece['rects'].length; i++) {
-          let rect = piece['rects'][i]
-          vc.blocked.push(`${rect['x'] + x1},${rect['y'] + y1}`)
+        piece['currentPos'] = new Point(x1, y1)
+        for (let i = 0; i < piece.points.length; i++) {
+          let p = piece.points[i]
+          vc.blocked.push(`${p.x + x1},${p.y + y1}`)
         }
 
         if (vc.ifDone()) {
@@ -360,6 +330,7 @@ export default {
         this.diceGroup.add(this.drawDice(this.draw, point.x, point.y, number.toString()))
       })
     },
+
     drawPieces() {
       if (this.pieceGroup) {
         this.pieceGroup.remove()
@@ -373,6 +344,9 @@ export default {
     roll() {
       this.rollDices()
       this.drawDices()
+      this.pieces.forEach((p) => {
+        p.reset()
+      })
       this.drawPieces()
     },
     getRollFromHash() {
@@ -453,91 +427,50 @@ export default {
       piecesBox: { x1: 7 * width, y1: 0, x2: 12 * width, y2: 6 * width },
       // piece 里面的 rects 是相对于矩形 group 左上角的坐标. center 是相对于 pieceBox 的坐标, 旋转的圆心
       pieces: [
-        { rects: [{ x: 0, y: 0 }], color: '#ffa500', center: { x: 1.5, y: 0.5 }, currentPos: null },
-        {
-          rects: [
-            { x: 1, y: 0 },
-            { x: 1, y: 1 },
-            { x: 0, y: 1 },
-            { x: 0, y: 2 },
-          ],
-          color: 'lightblue',
-          center: { x: 2, y: 1.5 },
-          currentPos: null,
-        },
-        {
-          rects: [
-            { x: 0, y: 0 },
-            { x: 0, y: 1 },
-            { x: 0, y: 2 },
-            { x: 0, y: 3 },
-          ],
-          color: '#3a3f3b',
-          center: { x: 3.5, y: 2 },
-          currentPos: null,
-        },
-        {
-          rects: [
-            { x: 0, y: 0 },
-            { x: 0, y: 1 },
-            { x: 0, y: 2 },
-          ],
-          color: '#ffa500',
-          center: { x: 4.5, y: 1.5 },
-          currentPos: null,
-        },
-        {
-          rects: [
-            { x: 0, y: 0 },
-            { x: 0, y: 1 },
-            { x: 0, y: 2 },
-            { x: 1, y: 2 },
-          ],
-          color: 'darkblue',
-          center: { x: 1, y: 2.5 },
-          currentPos: null,
-        },
-        {
-          rects: [
-            { x: 0, y: 0 },
-            { x: 0, y: 1 },
-          ],
-          color: '#ffa500',
-          center: { x: 2.5, y: 3 },
-          currentPos: null,
-        },
-        {
-          rects: [
-            { x: 1, y: 0 },
-            { x: 1, y: 1 },
-            { x: 0, y: 1 },
-            { x: 1, y: 2 },
-          ],
-          color: 'darkblue',
-          center: { x: 4, y: 4.5 },
-          currentPos: null,
-        },
-        {
-          rects: [
-            { x: 0, y: 0 },
-            { x: 1, y: 0 },
-            { x: 0, y: 1 },
-            { x: 1, y: 1 },
-          ],
-          color: '#3a3f3b',
-          center: { x: 1, y: 5 },
-          currentPos: null,
-        },
-        {
-          rects: [
-            { x: 0, y: 0 },
-            { x: 0, y: 1 },
-            { x: 1, y: 1 },
-          ],
-          color: 'lightblue',
-          center: { x: 3, y: 5 },
-          currentPos: null,
-        },
+        new Piece('', [new Point(0, 0)], '#ffa500', new Point(1.5, 0.5)),
+        new Piece(
+          '',
+          [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(0, 2)],
+          'lightblue',
+          new Point(2, 1.5),
+        ),
+        new Piece(
+          '',
+          [new Point(0, 0), new Point(0, 1), new Point(0, 2), new Point(0, 3)],
+          '#3a3f3b',
+          new Point(3.5, 2),
+        ),
+        new Piece(
+          '',
+          [new Point(0, 0), new Point(0, 1), new Point(0, 2)],
+          '#ffa500',
+          new Point(4.5, 1.5),
+        ),
+        new Piece(
+          '',
+          [new Point(0, 0), new Point(0, 1), new Point(0, 2), new Point(1, 2)],
+          'darkblue',
+          new Point(1, 2.5),
+        ),
+        new Piece('', [new Point(0, 0), new Point(0, 1)], '#ffa500', new Point(2.5, 3)),
+        new Piece(
+          '',
+          [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(1, 2)],
+          'darkblue',
+          new Point(4, 4.5),
+        ),
+        new Piece(
+          '',
+          [new Point(0, 0), new Point(1, 0), new Point(0, 1), new Point(1, 1)],
+          '#3a3f3b',
+          new Point(1, 5),
+        ),
+        new Piece(
+          '',
+          [new Point(0, 0), new Point(0, 1), new Point(1, 1)],
+          'lightblue',
+          new Point(3, 5),
+        ),
       ],
       dices: [
         new Dice([
