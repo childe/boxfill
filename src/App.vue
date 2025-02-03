@@ -5,7 +5,12 @@
     </div>
     <div
       id="gamebox"
-      style="height: {{constraints.y.max}}px; width: {{constraints.x.max}}px; border: solid black 1px"
+      :style="{
+        width: constraints.x.max + 2 + 'px',
+        height: constraints.y.max + 2 + 'px',
+        border: 'solid black 1px',
+      }"
+      style=""
     ></div>
   </div>
 </template>
@@ -339,8 +344,10 @@ export default {
     this.rollDices()
 
     // 画棋盘
-    draw.line(0, 0, 6 * width, 0)
-    draw.line(0, 6 * width, 6 * height, 0)
+    // draw.line(0, 0, 6 * width, 0).stroke({ width: 1, color: 'black' })
+    // draw.line(0, 6 * width, 6 * height, 0).stroke({ width: 1, color: 'black' })
+    draw.line(6 * width, 0, 6 * height, 6 * height).stroke({ width: 2, color: 'black' })
+
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 6; j++) {
         const color = (i + j) % 2 === 0 ? '#ffffff' : '#cccccc'
@@ -373,7 +380,7 @@ export default {
 
       blocked: [],
       board: { x1: 0, y1: 0, x2: 6 * width, y2: 6 * width },
-      piecesBox: { x1: 7 * width, y1: 0, x2: 13 * width, y2: 6 * width },
+      piecesBox: { x1: 7 * width, y1: 0, x2: 12 * width, y2: 6 * width },
       // piece 里面的 rects 是相对于矩形 group 左上角的坐标. center 是相对于 pieceBox 的坐标, 旋转的圆心
       pieces: [
         { rects: [{ x: 0, y: 0 }], color: '#ffa500', center: { x: 1.5, y: 0.5 }, currentPos: null },
