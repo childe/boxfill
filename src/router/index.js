@@ -3,8 +3,13 @@ import Main from '@/views/Main.vue'
 
 const routes = [
   {
+    path: '/',
+    name: 'defaul',
+    component: Main,
+  },
+  {
     path: '/:roll',
-    name: 'home',
+    name: 'roll',
     component: Main,
   },
 ]

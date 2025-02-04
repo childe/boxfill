@@ -370,62 +370,67 @@ export default {
 
     roll() {
       this.rollDices()
-      window.location.search = '?roll=' + this.generateRoll()
+      this.$router.push({ name: 'roll', params: { roll: this.generateRoll() } })
       return false
     },
-    getRollFromUrl() {
-      const urlParams = new URLSearchParams(window.location.search)
-      return urlParams.get('roll')
+
+    createAll() {
+      const roll = this.$route.params.roll
+      console.log(roll)
+      if (roll !== undefined && roll !== null && roll.length === 14) {
+        for (let i = 0; i < roll.length; i += 2) {
+          let dice = roll.slice(i, i + 2)
+          let x = dice.toUpperCase().charCodeAt(0) - 65
+          let y = parseInt(dice[1]) - 1
+          let d = this.dices[i / 2]
+          d.idx = d.points.findIndex((p) => p.x === x && p.y === y)
+
+          // update blocked cells
+          this.blocked = []
+          for (let i = 0; i < this.dices.length; i++) {
+            let point = this.dices[i].point()
+            this.blocked.push(`${point.x},${point.y}`)
+          }
+        }
+      } else {
+        this.rollDices()
+      }
+
+      if (this.draw) {
+        this.draw.remove()
+      }
+      var draw = SVG().addTo('#gamebox').size(this.constraints.x.max, this.constraints.y.max)
+      this.draw = draw
+
+      // 画棋盘
+      // draw.line(0, 0, 6 * width, 0).stroke({ width: 1, color: 'black' })
+      // draw.line(0, 6 * width, 6 * height, 0).stroke({ width: 1, color: 'black' })
+      draw.line(6 * width, 0, 6 * height, 6 * height).stroke({ width: 2, color: 'black' })
+
+      for (let i = 0; i < 6; i++) {
+        for (let j = 0; j < 6; j++) {
+          const color = (i + j) % 2 === 0 ? '#ffffff' : '#cccccc'
+          draw
+            .rect(width, height)
+            .move(j * width, i * height)
+            .fill(color)
+        }
+      }
+
+      // 画棋子
+      this.drawPieces()
+
+      // 画色子
+      this.drawDices(draw)
+    },
+  },
+  watch: {
+    $route() {
+      this.createAll()
     },
   },
   mounted() {
-    console.log(this.$route)
-    console.log(this.$route.query)
-    console.log(this.$route.params)
-    console.log(this.$route.params.roll)
-    const roll = this.$route.params.roll
-    if (roll !== null) {
-      for (let i = 0; i < roll.length; i += 2) {
-        let dice = roll.slice(i, i + 2)
-        let x = dice.toUpperCase().charCodeAt(0) - 65
-        let y = parseInt(dice[1]) - 1
-        let d = this.dices[i / 2]
-        d.idx = d.points.findIndex((p) => p.x === x && p.y === y)
-
-        // update blocked cells
-        this.blocked = []
-        for (let i = 0; i < this.dices.length; i++) {
-          let point = this.dices[i].point()
-          this.blocked.push(`${point.x},${point.y}`)
-        }
-      }
-    } else {
-      this.rollDices()
-    }
-
-    var draw = SVG().addTo('#gamebox').size(this.constraints.x.max, this.constraints.y.max)
-    this.draw = draw
-
-    // 画棋盘
-    // draw.line(0, 0, 6 * width, 0).stroke({ width: 1, color: 'black' })
-    // draw.line(0, 6 * width, 6 * height, 0).stroke({ width: 1, color: 'black' })
-    draw.line(6 * width, 0, 6 * height, 6 * height).stroke({ width: 2, color: 'black' })
-
-    for (let i = 0; i < 6; i++) {
-      for (let j = 0; j < 6; j++) {
-        const color = (i + j) % 2 === 0 ? '#ffffff' : '#cccccc'
-        draw
-          .rect(width, height)
-          .move(j * width, i * height)
-          .fill(color)
-      }
-    }
-
-    // 画棋子
-    this.drawPieces()
-
-    // 画色子
-    this.drawDices(draw)
+    this.createAll()
   },
   computed: {
     constraints() {
