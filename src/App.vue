@@ -362,6 +362,10 @@ export default {
     },
   },
   mounted() {
+    console.log(this.$route)
+    console.log(this.$route.query)
+    console.log(this.$route.params)
+    console.log(this.$route.params.roll)
     const roll = this.getRollFromUrl()
     if (roll !== null) {
       for (let i = 0; i < roll.length; i += 2) {
