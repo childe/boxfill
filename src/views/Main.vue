@@ -355,6 +355,7 @@ export default {
 
       this.pieceGroup = this.draw.group()
       for (let i = 0; i < this.pieces.length; i++) {
+        this.pieces[i].reset()
         this.pieceGroup.add(this.drawPiece(this.draw, this.pieces[i]))
       }
     },
