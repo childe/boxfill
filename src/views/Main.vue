@@ -449,7 +449,7 @@ export default {
 
       blocked: [],
       board: { x1: 0, y1: 0, x2: 6 * width, y2: 6 * width },
-      piecesBox: { x1: 7 * width, y1: 0, x2: 12.6 * width, y2: 6 * width },
+      piecesBox: { x1: 1 + 6.6 * width, y1: 0, x2: 12.2 * width, y2: 6 * width },
       // piece 里面的 rects 是相对于矩形 group 左上角的坐标. center 是相对于 pieceBox 的坐标, 旋转的圆心
       pieces: [
         new Piece('', [new Point(0, 0)], '#ffa500', new Point(1.5, 0.5)),
