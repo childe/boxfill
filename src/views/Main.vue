@@ -394,7 +394,7 @@ export default {
           }
         }
       } else {
-        this.rollDices()
+        this.roll()
       }
 
       if (this.draw) {
