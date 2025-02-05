@@ -205,6 +205,7 @@ export default {
         this.data({ startX: x, startY: y })
 
         group.front()
+        group.opacity(0.8)
 
         // remove blocked cell
         let currentPos = piece['currentPos']
@@ -219,6 +220,8 @@ export default {
       group.on('dragend.namespace', function (e) {
         const { box } = e.detail
         e.preventDefault()
+
+        group.opacity(1)
 
         let { x, y, x2, y2 } = box
 
@@ -410,7 +413,7 @@ export default {
 
       for (let i = 0; i < 6; i++) {
         for (let j = 0; j < 6; j++) {
-          const color = (i + j) % 2 === 0 ? '#ffffff' : '#cccccc'
+          const color = (i + j) % 2 === 0 ? '#fefefe' : '#efefef'
           draw
             .rect(width, height)
             .move(j * width, i * height)
