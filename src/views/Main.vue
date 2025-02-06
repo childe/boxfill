@@ -6,8 +6,8 @@
     <div
       id="gamebox"
       :style="{
-        width: constraints.x.max + 2 + 'px',
-        height: constraints.y.max + 2 + 'px',
+        // width: '100%',
+        // height: constraints.y.max + 2 + 'px',
         border: 'solid black 1px',
       }"
       style=""
@@ -19,8 +19,10 @@
 import { SVG } from '@svgdotjs/svg.js'
 import '@svgdotjs/svg.draggable.js'
 
-const width = 30
-const height = 30
+window.innerWidth
+
+const width = Math.max(20, parseInt(window.innerWidth / 15))
+const height = width
 
 class Point {
   constructor(x, y) {
