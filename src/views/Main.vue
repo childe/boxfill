@@ -8,7 +8,7 @@
       :style="{
         // width: '100%',
         // height: constraints.y.max + 2 + 'px',
-        border: 'solid black 1px',
+        // border: 'solid black 1px',
       }"
       style=""
     ></div>
@@ -19,9 +19,9 @@
 import { SVG } from '@svgdotjs/svg.js'
 import '@svgdotjs/svg.draggable.js'
 
-window.innerWidth
-
-const width = Math.max(20, parseInt(window.innerWidth / 15))
+const w = Math.max(20, parseInt(window.innerWidth / 15))
+const h = Math.max(20, parseInt(window.innerHeight / 6))
+const width = Math.min(w, h)
 const height = width
 
 class Point {
@@ -110,16 +110,20 @@ export default {
     moveGroupToPieceBox(group, piece) {
       let center = piece.center
       console.debug('center', center, piece.width() / 2, piece.height() / 2)
-      group.move(
-        (center.x - piece.width() / 2) * width + this.piecesBox['x1'],
-        (center.y - piece.height() / 2) * height + this.piecesBox['y1'],
+      // group.move(
+      //   (center.x - piece.width() / 2) * width + this.piecesBox['x1'],
+      //   (center.y - piece.height() / 2) * height + this.piecesBox['y1'],
+      // )
+      group.center(
+        center.x * width + this.piecesBox['x1'],
+        center.y * height + this.piecesBox['y1'],
       )
       console.debug(
         'move to',
-        center.x - piece.width() / 2,
-        center.y - piece.height() / 2,
-        (center.x - piece.width() / 2) * width + this.piecesBox['x1'],
-        (center.y - piece.height() / 2) * height + this.piecesBox['y1'],
+        center.x,
+        center.y,
+        center.x * width + this.piecesBox['x1'],
+        center.y * height + this.piecesBox['y1'],
       )
       piece.currentPos = null
     },
@@ -227,21 +231,21 @@ export default {
 
         let { x, y, x2, y2 } = box
 
-        if (x <= vc.constraints.x.min) {
-          x = vc.constraints.x.min
-        }
+        // if (x <= vc.constraints.x.min) {
+        //   x = vc.constraints.x.min
+        // }
 
-        if (y <= vc.constraints.y.min) {
-          y = vc.constraints.y.min
-        }
+        // if (y <= vc.constraints.y.min) {
+        //   y = vc.constraints.y.min
+        // }
 
-        if (x2 >= vc.constraints.x.max) {
-          x = vc.constraints.x.max - box.w
-        }
+        // if (x2 >= vc.constraints.x.max) {
+        //   x = vc.constraints.x.max - box.w
+        // }
 
-        if (y2 > vc.constraints.y.max) {
-          y = vc.constraints.y.max - box.h
-        }
+        // if (y2 > vc.constraints.y.max) {
+        //   y = vc.constraints.y.max - box.h
+        // }
 
         let x1 = parseInt(x / width)
         let y1 = parseInt(y / height)
@@ -409,25 +413,27 @@ export default {
       this.draw = draw
 
       // 画棋盘
-      // draw.line(0, 0, 6 * width, 0).stroke({ width: 1, color: 'black' })
-      // draw.line(0, 6 * width, 6 * height, 0).stroke({ width: 1, color: 'black' })
-      draw.line(6 * width, 0, 6 * height, 6 * height).stroke({ width: 2, color: 'black' })
+      let boardPath = `0,0 ${6 * width},0 ${6 * width},${6 * height} 0,${6 * height} 0,0`
+      draw.polygon(boardPath).fill('none').stroke({ width: 1, color: 'black' })
 
       for (let i = 0; i < 6; i++) {
         for (let j = 0; j < 6; j++) {
           const color = (i + j) % 2 === 0 ? '#fefefe' : '#efefef'
           draw
-            .rect(width, height)
-            .move(j * width, i * height)
+            .rect(width - 2, height - 2)
+            .move(j * width + 1, i * height + 1)
             .fill(color)
         }
       }
 
-      // 画棋子
-      this.drawPieces()
-
       // 画色子
       this.drawDices(draw)
+
+      // 画棋子
+      let p = this.piecesBox
+      let pieceBoxPath = `${p.x1},${p.y1} ${p.x2},${p.y1} ${p.x2},${p.y2} ${p.x1},${p.y2} ${p.x1},${p.y1}`
+      draw.polygon(pieceBoxPath).fill('none').stroke({ width: 1, color: 'black' })
+      this.drawPieces()
     },
   },
   watch: {
@@ -436,6 +442,18 @@ export default {
     },
   },
   mounted() {
+    // window.addEventListener('resize', function () {
+    //   console.log('resize')
+    // })
+
+    if (window.innerWidth > window.innerHeight) {
+      this.piecesBox = { x1: 1 + 6.6 * width, y1: 0, x2: 12.2 * width, y2: 6 * width }
+    } else {
+      this.piecesBox = { x1: 0, y1: 6.6 * height, x2: width * 6, y2: 12.5 * height }
+      this.pieces.forEach((piece) => {
+        piece.center = new Point(piece.center.x + 0.5, piece.center.y)
+      })
+    }
     this.createAll()
   },
   computed: {
@@ -454,7 +472,9 @@ export default {
 
       blocked: [],
       board: { x1: 0, y1: 0, x2: 6 * width, y2: 6 * width },
-      piecesBox: { x1: 1 + 6.6 * width, y1: 0, x2: 12.2 * width, y2: 6 * width },
+      // piecesBox: { x1: 1 + 6.6 * width, y1: 0, x2: 12.2 * width, y2: 6 * width },
+      // piecesBox: { x1: 0, y1: 6.6 * height, x2: height * 6, y2: 12.6 * height },
+      piecesBox: null,
       // piece 里面的 rects 是相对于矩形 group 左上角的坐标. center 是相对于 pieceBox 的坐标, 旋转的圆心
       pieces: [
         new Piece('', [new Point(0, 0)], '#ffa500', new Point(1.5, 0.5)),
