@@ -435,6 +435,14 @@ export default {
       draw.polygon(pieceBoxPath).fill('none').stroke({ width: 1, color: 'black' })
       this.drawPieces()
     },
+
+    handleResize() {
+      clearTimeout(this.resizeTimer)
+      this.resizeTimer = setTimeout(() => {
+        this.windowWidth = window.innerWidth
+        console.log('resize')
+      }, 500) // 0.5 秒后触发
+    },
   },
   watch: {
     $route() {
@@ -442,9 +450,7 @@ export default {
     },
   },
   mounted() {
-    // window.addEventListener('resize', function () {
-    //   console.log('resize')
-    // })
+    window.addEventListener('resize', this.handleResize)
 
     if (window.innerWidth > window.innerHeight) {
       this.piecesBox = { x1: 1 + 6.6 * width, y1: 0, x2: 12.2 * width, y2: 6 * width }
@@ -466,6 +472,8 @@ export default {
   },
   data() {
     return {
+      resizeTimer: null,
+
       draw: null,
       diceGroup: null,
       pieceGroup: null,
