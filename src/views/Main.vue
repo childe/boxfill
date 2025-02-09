@@ -354,7 +354,6 @@ export default {
 
       this.pieceGroup = this.draw.group()
       for (let i = 0; i < this.pieces.length; i++) {
-        this.pieces[i].reset()
         this.pieceGroup.add(this.drawPiece(this.draw, this.pieces[i]))
       }
     },
@@ -423,6 +422,9 @@ export default {
       let p = this.piecesBox
       let pieceBoxPath = `${p.x1},${p.y1} ${p.x2},${p.y1} ${p.x2},${p.y2} ${p.x1},${p.y2} ${p.x1},${p.y1}`
       draw.polygon(pieceBoxPath).fill('none').stroke({ width: 1, color: 'black' })
+      for (let i = 0; i < this.pieces.length; i++) {
+        this.pieces[i].reset()
+      }
       this.drawPieces()
     },
 
