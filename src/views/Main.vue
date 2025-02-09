@@ -1,17 +1,9 @@
 <template>
-  <div style="display: flex; margin-top: 20px">
-    <div id="actions" style="margin-right: 20px">
+  <div style="margin-top: 10px">
+    <div id="gamebox"></div>
+    <div id="actions">
       <button @click="roll">Roll</button>
     </div>
-    <div
-      id="gamebox"
-      :style="{
-        // width: '100%',
-        // height: constraints.y.max + 2 + 'px',
-        // border: 'solid black 1px',
-      }"
-      style=""
-    ></div>
   </div>
 </template>
 
@@ -19,10 +11,8 @@
 import { SVG } from '@svgdotjs/svg.js'
 import '@svgdotjs/svg.draggable.js'
 
-const w = Math.max(20, parseInt(window.innerWidth / 15))
-const h = Math.max(20, parseInt(window.innerHeight / 6))
-const width = Math.min(w, h)
-const height = width
+var width
+var height
 
 class Point {
   constructor(x, y) {
@@ -453,8 +443,19 @@ export default {
     window.addEventListener('resize', this.handleResize)
 
     if (window.innerWidth > window.innerHeight) {
-      this.piecesBox = { x1: 1 + 6.6 * width, y1: 0, x2: 12.2 * width, y2: 6 * width }
+      let w = Math.max(20, parseInt(window.innerWidth / 13))
+      let h = Math.max(20, parseInt((window.innerHeight - 30) / 6))
+      width = Math.min(w, h)
+      height = width
+      this.piecesBox = { x1: 1 + 6.6 * width, y1: 0, x2: 12.6 * width, y2: 6 * width }
+      this.pieces.forEach((piece) => {
+        piece.center = new Point(piece.center.x + 0.5, piece.center.y)
+      })
     } else {
+      let w = Math.max(20, parseInt(window.innerWidth / 6))
+      let h = Math.max(20, parseInt((window.innerHeight - 30) / 13))
+      width = Math.min(w, h)
+      height = width
       this.piecesBox = { x1: 0, y1: 6.6 * height, x2: width * 6, y2: 12.5 * height }
       this.pieces.forEach((piece) => {
         piece.center = new Point(piece.center.x + 0.5, piece.center.y)
