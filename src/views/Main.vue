@@ -289,10 +289,12 @@ export default {
       return group
     },
 
-    drawDice(draw, x, y, number) {
-      const diceSize = ((width + height) / 2) * 0.8
-      const diceX = width * 0.1 + x * width
-      const diceY = height * 0.1 + y * height
+    drawDice(draw, dice) {
+      let point = dice.points[dice.idx]
+      const number = String.fromCharCode(97 + point.x) + (point.y + 1)
+      const diceSize = (width + height) / 2 - 4
+      const diceX = point.x * width + 2
+      const diceY = point.y * height + 2
 
       // 画色子的背景
       let group = draw.group()
@@ -334,9 +336,7 @@ export default {
 
       this.diceGroup = this.draw.group()
       this.dices.forEach((dice) => {
-        let point = dice.points[dice.idx]
-        const number = String.fromCharCode(97 + point.x) + (point.y + 1)
-        this.diceGroup.add(this.drawDice(this.draw, point.x, point.y, number.toString()))
+        this.diceGroup.add(this.drawDice(this.draw, dice))
       })
 
       // update blocked cells
@@ -481,53 +481,53 @@ export default {
 
       blocked: [],
       board: { x1: 0, y1: 0, x2: 6 * width, y2: 6 * width },
-      // piecesBox: { x1: 1 + 6.6 * width, y1: 0, x2: 12.2 * width, y2: 6 * width },
-      // piecesBox: { x1: 0, y1: 6.6 * height, x2: height * 6, y2: 12.6 * height },
+
       piecesBox: null,
+
       // piece 里面的 rects 是相对于矩形 group 左上角的坐标. center 是相对于 pieceBox 的坐标, 旋转的圆心
       pieces: [
-        new Piece('', [new Point(0, 0)], '#ffa500', new Point(1.5, 0.5)),
+        new Piece('', [new Point(0, 0)], '#a1d99b', new Point(1.5, 0.5)),
         new Piece(
           '',
           [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(0, 2)],
-          'lightblue',
+          '#6baed6',
           new Point(2, 1.5),
         ),
         new Piece(
           '',
           [new Point(0, 0), new Point(0, 1), new Point(0, 2), new Point(0, 3)],
-          '#3a3f3b',
+          '#31a354',
           new Point(3.5, 2),
         ),
         new Piece(
           '',
           [new Point(0, 0), new Point(0, 1), new Point(0, 2)],
-          '#ffa500',
+          '#e6550d',
           new Point(4.5, 1.5),
         ),
         new Piece(
           '',
           [new Point(0, 0), new Point(0, 1), new Point(0, 2), new Point(1, 2)],
-          'darkblue',
+          '#3182bd',
           new Point(1, 2.5),
         ),
         new Piece('', [new Point(0, 0), new Point(0, 1)], '#ffa500', new Point(2.5, 3)),
         new Piece(
           '',
           [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(1, 2)],
-          'darkblue',
+          '#08519c',
           new Point(4, 4.5),
         ),
         new Piece(
           '',
           [new Point(0, 0), new Point(1, 0), new Point(0, 1), new Point(1, 1)],
-          '#3a3f3b',
+          '#a6cee3',
           new Point(1, 5),
         ),
         new Piece(
           '',
           [new Point(0, 0), new Point(0, 1), new Point(1, 1)],
-          'lightblue',
+          '#74c476',
           new Point(3, 5),
         ),
       ],
